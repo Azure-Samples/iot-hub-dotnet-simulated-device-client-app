@@ -1,6 +1,6 @@
 # Connect your simulated device to your IoT hub using .NET
 
-Please follow the tutorial https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-csharp-csharp-getstarted to learn about this sample.
+Please follow the tutorial https://docs.microsoft.com/azure/iot-hub/iot-hub-csharp-csharp-getstarted to learn about this sample.
 
 ## Contributing
 
