@@ -15,6 +15,7 @@
 
         private static void Main(string[] args)
         {
+            Telemetry.AskForPermission();
             _registryManager = RegistryManager.CreateFromConnectionString(ConnectionString);
             AddDeviceAsync().Wait();
             Console.ReadLine();

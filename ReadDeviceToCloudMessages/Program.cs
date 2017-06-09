@@ -37,6 +37,7 @@
         }
         static void Main(string[] args)
         {
+            Telemetry.AskForPermission();
             Console.WriteLine("Receive messages. Ctrl-C to exit.\n");
             try
             {

@@ -18,6 +18,7 @@
 
         private static void Main(string[] args)
         {
+            Telemetry.AskForPermission();
             Console.WriteLine("Simulated device\n");
             try
             {
