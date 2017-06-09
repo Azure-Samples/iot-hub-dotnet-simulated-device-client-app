@@ -1,41 +1,59 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.Text;
-using Microsoft.ServiceBus.Messaging;
-using System.Threading;
-using System.Collections.Generic;
-
-namespace ReadDeviceToCloudMessages
+﻿namespace ReadDeviceToCloudMessages
 {
+    using System;
+    using System.Threading.Tasks;
+    using System.Text;
+    using Microsoft.ServiceBus.Messaging;
+    using System.Threading;
+    using System.Collections.Generic;
+    using Telemetry;
+
     class Program
     {
-        static string connectionString = "{iothub connection string}";
-        static string iotHubD2cEndpoint = "messages/events";
-        static EventHubClient eventHubClient;
+        private const string ConnectionString = "{iothub connection string}";
+        private const string IotHubD2CEndpoint = "messages/events";
+        private static EventHubClient _eventHubClient;
+
+        private const string Name = "readdevicetocloudmessages";
 
         private static async Task ReceiveMessagesFromDeviceAsync(string partition, CancellationToken ct)
         {
-            var eventHubReceiver = eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition, DateTime.UtcNow);
-            while (true)
+            var eventHubReceiver = _eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition, DateTime.UtcNow);
+            try
             {
-                if (ct.IsCancellationRequested) break;
-                EventData eventData = await eventHubReceiver.ReceiveAsync();
-                if (eventData == null) continue;
-
-                string data = Encoding.UTF8.GetString(eventData.GetBytes());
-                Console.WriteLine("Message received. Partition: {0} Data: '{1}'", partition, data);
+                while (true)
+                {
+                    if (ct.IsCancellationRequested) break;
+                    var eventData = await eventHubReceiver.ReceiveAsync();
+                    if (eventData == null) continue;
+                    var data = Encoding.UTF8.GetString(eventData.GetBytes());
+                    Console.WriteLine($"Message received. Partition: {partition} Data: '{data}'");
+                }
+            }
+            catch (Exception e)
+            {
+                Telemetry.Instance.Track("failed", ConnectionString, Name, $"receive device message exception: {e.Message}");
             }
         }
         static void Main(string[] args)
         {
             Console.WriteLine("Receive messages. Ctrl-C to exit.\n");
-            eventHubClient = EventHubClient.CreateFromConnectionString(connectionString, iotHubD2cEndpoint);
+            try
+            {
+                _eventHubClient = EventHubClient.CreateFromConnectionString(ConnectionString, IotHubD2CEndpoint);
+            }
+            catch (Exception e)
+            {
+                Telemetry.Instance.Track("failed", ConnectionString, Name, $"event hub client failed: {e.Message}");
+                return;
+            }
 
-            var d2cPartitions = eventHubClient.GetRuntimeInformation().PartitionIds;
+            Telemetry.Instance.Track("success", ConnectionString, Name, "event hub client created");
+            var d2cPartitions = _eventHubClient.GetRuntimeInformation().PartitionIds;
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
-            System.Console.CancelKeyPress += (s, e) =>
+            Console.CancelKeyPress += (s, e) =>
             {
                 e.Cancel = true;
                 cts.Cancel();

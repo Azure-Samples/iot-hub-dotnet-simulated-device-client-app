@@ -1,14 +1,24 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Azure.Devices;
-using Microsoft.Azure.Devices.Common.Exceptions;
-
-namespace CreateDeviceIdentity
+﻿namespace CreateDeviceIdentity
 {
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.Azure.Devices;
+    using Microsoft.Azure.Devices.Common.Exceptions;
+    using Telemetry;
+
     class Program
     {
-        static RegistryManager registryManager;
-        static string connectionString = "{iot hub connection string}";
+        private static RegistryManager _registryManager;
+        private const string ConnectionString = "{iot hub connection string}";
+
+        private const string Name = "createdeviceidentity";
+
+        private static void Main(string[] args)
+        {
+            _registryManager = RegistryManager.CreateFromConnectionString(ConnectionString);
+            AddDeviceAsync().Wait();
+            Console.ReadLine();
+        }
 
         private static async Task AddDeviceAsync()
         {
@@ -16,20 +26,22 @@ namespace CreateDeviceIdentity
             Device device;
             try
             {
-                device = await registryManager.AddDeviceAsync(new Device(deviceId));
+                device = await _registryManager.AddDeviceAsync(new Device(deviceId));
+                Telemetry.Instance.Track("success", ConnectionString, Name, "register new device");
             }
             catch (DeviceAlreadyExistsException)
             {
-                device = await registryManager.GetDeviceAsync(deviceId);
+                device = await _registryManager.GetDeviceAsync(deviceId);
+                Telemetry.Instance.Track("success", ConnectionString, Name, "device existed");
             }
-            Console.WriteLine("Generated device key: {0}", device.Authentication.SymmetricKey.PrimaryKey);
-        }
+            catch (Exception e)
+            {
+                Telemetry.Instance.Track("failed", ConnectionString, Name, $"register device failed: {e.Message}");
+                Console.WriteLine($"register device failed: {e.Message}");
+                return;
+            }
 
-        static void Main(string[] args)
-        {
-            registryManager = RegistryManager.CreateFromConnectionString(connectionString);
-            AddDeviceAsync().Wait();
-            Console.ReadLine();
+            Console.WriteLine($"device key : {device.Authentication.SymmetricKey.PrimaryKey}");
         }
     }
 }
