@@ -80,10 +80,7 @@
                 response = Console.ReadLine();
             } while (response != "" && response.ToLower() != "y" && response.ToLower() != "n");
             SetConfig(TelemetryKey, (response == "" || response.ToLower() == "y") ? "true" : "false");
-            if (response.ToLower() == "false")
-            {
-                Instance.TrackSimpleSuccess();
-            }
+            Instance.TrackUserChoice(response);
         }
 
         private static string SHA256Hash(string value)
@@ -103,14 +100,17 @@
                     .FirstOrDefault();
         }
 
-        private void TrackSimpleSuccess()
+        private void TrackUserChoice(string choice)
         {
+            if (string.IsNullOrEmpty(choice))
+            {
+                choice = "y";
+            }
             Client.TrackEvent("success", new Dictionary<string, string>
             {
                 {"language", "C#"},
                 {"device", SimulatedDevice},
-                {"osversion", Environment.OSVersion.ToString()},
-                {"mac", SHA256Hash(GetMac())}
+                {"userchoice", choice}
             });
         }
 
