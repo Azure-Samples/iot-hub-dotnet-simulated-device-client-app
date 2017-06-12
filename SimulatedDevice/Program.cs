@@ -27,7 +27,7 @@
             catch (Exception e)
             {
                 Telemetry.Instance.Track("failed", IoTHubUri, Name, $"create device client failed: {e.Message}");
-                return;
+                throw;
             }
             Telemetry.Instance.Track("success", IoTHubUri, Name, "device client created");
             SendDeviceToCloudMessagesAsync();

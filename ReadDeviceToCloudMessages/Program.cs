@@ -46,7 +46,7 @@
             catch (Exception e)
             {
                 Telemetry.Instance.Track("failed", ConnectionString, Name, $"event hub client failed: {e.Message}");
-                return;
+                throw;
             }
 
             Telemetry.Instance.Track("success", ConnectionString, Name, "event hub client created");
