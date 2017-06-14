@@ -14,7 +14,7 @@
     {
         private static readonly Lazy<Telemetry> Lazy = new Lazy<Telemetry>(() => new Telemetry());
         public static Telemetry Instance => Lazy.Value;
-        private static readonly string ConfigFilePath = GetTelemetryConfigPath();
+        private static readonly string ConfigFilePath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.FullName, ConfigFileName);
         private static readonly XDocument Doc = XDocument.Load(ConfigFilePath);
         private const string ConfigFileName = "telemetry.config";
         private const string TelemetryKey = "telemetry";
@@ -30,19 +30,6 @@
         {
             InstrumentationKey = ReadConfig(InstrumentationKey)
         };
-
-        private static string GetTelemetryConfigPath()
-        {
-            var projectPath = Directory.GetParent(Environment.CurrentDirectory).Parent;
-            var temp = projectPath;
-            var configPath = "";
-            do
-            {
-                configPath = Path.Combine(temp.Parent.FullName, ConfigFileName);
-            } while (!File.Exists(configPath) && temp.Parent != null);
-
-            return configPath;
-        }
 
         private static string ReadConfig(string key)
         {
