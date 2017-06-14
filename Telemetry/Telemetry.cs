@@ -46,11 +46,7 @@
 
         private static string ReadConfig(string key)
         {
-            if (!string.IsNullOrEmpty(ConfigFilePath))
-            {
-                return Doc.Descendants(key).First()?.Value;
-            }
-            return null;
+            return !string.IsNullOrEmpty(ConfigFilePath) ? Doc.Descendants(key).First()?.Value : null;
         }
 
         private static void SetConfig(string key, string value)

@@ -6,12 +6,12 @@
     using Microsoft.Azure.Devices.Common.Exceptions;
     using Telemetry;
 
-    class Program
+    public class Program
     {
         private static RegistryManager _registryManager;
         private const string ConnectionString = "{iot hub connection string}";
-
         private const string Name = "createdeviceidentity";
+        private const string DeviceId = "myFirstDevice";
 
         private static void Main(string[] args)
         {
@@ -23,23 +23,22 @@
 
         private static async Task AddDeviceAsync()
         {
-            string deviceId = "myFirstDevice";
             Device device;
             try
             {
-                device = await _registryManager.AddDeviceAsync(new Device(deviceId));
+                device = await _registryManager.AddDeviceAsync(new Device(DeviceId));
                 Telemetry.Instance.Track("success", ConnectionString, Name, "register new device");
             }
             catch (DeviceAlreadyExistsException)
             {
-                device = await _registryManager.GetDeviceAsync(deviceId);
+                device = await _registryManager.GetDeviceAsync(DeviceId);
                 Telemetry.Instance.Track("success", ConnectionString, Name, "device existed");
             }
             catch (Exception e)
             {
                 Telemetry.Instance.Track("failed", ConnectionString, Name, $"register device failed: {e.Message}");
                 Console.WriteLine($"register device failed: {e.Message}");
-                return;
+                throw;
             }
 
             Console.WriteLine($"device key : {device.Authentication.SymmetricKey.PrimaryKey}");

@@ -7,7 +7,7 @@
     using System.Threading;
     using System.Linq;
 
-    class Program
+    public class Program
     {
         private const string ConnectionString = "{iothub connection string}";
         private const string IotHubD2CEndpoint = "messages/events";
@@ -27,7 +27,7 @@
             }
         }
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine("Receive messages. Ctrl-C to exit.\n");
             _eventHubClient = EventHubClient.CreateFromConnectionString(ConnectionString, IotHubD2CEndpoint);
@@ -41,7 +41,7 @@
                 Console.WriteLine("Exiting...");
             };
 
-            var tasks = partitions.Select(partition => ReceiveMessagesFromDeviceAsync(partition, cts.Token)).ToList();
+            var tasks = partitions.Select(partition => ReceiveMessagesFromDeviceAsync(partition, cts.Token));
             Task.WaitAll(tasks.ToArray());
         }
     }
