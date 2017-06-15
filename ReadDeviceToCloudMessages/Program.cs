@@ -13,12 +13,12 @@
         private const string IotHubD2CEndpoint = "messages/events";
         private static EventHubClient _eventHubClient;
 
-        private static async Task ReceiveMessagesFromDeviceAsync(string partition, CancellationToken ct)
+        private static async Task ReceiveMessagesFromDeviceAsync(string partition, CancellationToken cancellationToken)
         {
             var eventHubReceiver = _eventHubClient.GetDefaultConsumerGroup().CreateReceiver(partition, DateTime.UtcNow);
             while (true)
             {
-                if (ct.IsCancellationRequested) break;
+                if (cancellationToken.IsCancellationRequested) break;
                 var eventData = await eventHubReceiver.ReceiveAsync();
                 if (eventData == null) continue;
 

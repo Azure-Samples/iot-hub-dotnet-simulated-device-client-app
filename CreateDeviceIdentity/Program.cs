@@ -14,8 +14,8 @@
         private const string Name = "createdeviceidentity";
         private const string DeviceId = "myFirstDevice";
         private const string TelemetryKey = "telemetry";
-        private const string InstruKey = "instrumentationKey";
-        private static readonly Telemetry TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstruKey]);
+        private const string InstrumentationKey = "instrumentationKey";
+        private static readonly Telemetry TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstrumentationKey]);
         private static readonly Configuration Config = ConfigurationManager.OpenExeConfiguration(System.IO.Path.Combine(
             Environment.CurrentDirectory, System.Reflection.Assembly.GetExecutingAssembly().ManifestModule.Name));
 
@@ -73,9 +73,9 @@
 
         private static void SendTelemetry(string eventName, string message)
         {
-            bool temp;
-            bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out temp);
-            if (temp)
+            bool shouldSend;
+            bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
+            if (shouldSend)
             {
                 TelemetryClient.Track(eventName, ConnectionString, Name, message);
             }
