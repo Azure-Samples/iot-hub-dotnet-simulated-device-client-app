@@ -1,6 +1,7 @@
 ﻿namespace CreateDeviceIdentity
 {
     using System;
+    using System.Configuration;
     using System.Threading.Tasks;
     using Microsoft.Azure.Devices;
     using Microsoft.Azure.Devices.Common.Exceptions;
@@ -12,10 +13,15 @@
         private const string ConnectionString = "{iot hub connection string}";
         private const string Name = "createdeviceidentity";
         private const string DeviceId = "myFirstDevice";
+        private const string TelemetryKey = "telemetry";
+        private const string InstruKey = "instrumentationKey";
+        private static readonly Telemetry TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstruKey]);
+        private static readonly Configuration Config = ConfigurationManager.OpenExeConfiguration(System.IO.Path.Combine(
+            Environment.CurrentDirectory, System.Reflection.Assembly.GetExecutingAssembly().ManifestModule.Name));
 
         private static void Main(string[] args)
         {
-            Telemetry.AskForPermission();
+            OptIn();
             _registryManager = RegistryManager.CreateFromConnectionString(ConnectionString);
             AddDeviceAsync().Wait();
             Console.ReadLine();
@@ -27,21 +33,52 @@
             try
             {
                 device = await _registryManager.AddDeviceAsync(new Device(DeviceId));
-                Telemetry.Instance.Track("success", ConnectionString, Name, "register new device");
+                SendTelemetry("success", "register new device");
             }
             catch (DeviceAlreadyExistsException)
             {
                 device = await _registryManager.GetDeviceAsync(DeviceId);
-                Telemetry.Instance.Track("success", ConnectionString, Name, "device existed");
+                SendTelemetry("success", "device existed");
             }
             catch (Exception e)
             {
-                Telemetry.Instance.Track("failed", ConnectionString, Name, $"register device failed: {e.Message}");
+                SendTelemetry("failed", $"register device failed: {e.Message}");
                 Console.WriteLine($"register device failed: {e.Message}");
                 throw;
             }
 
             Console.WriteLine($"device key : {device.Authentication.SymmetricKey.PrimaryKey}");
+        }
+
+        private static void OptIn()
+        {
+            if (!string.IsNullOrEmpty(ConfigurationManager.AppSettings[TelemetryKey]))
+            {
+                return;
+            }
+            string response;
+            Console.WriteLine(TelemetryClient.PromptText);
+            do
+            {
+                Console.Write("Select y to enable data collection :(y/n, default is y) ");
+                response = Console.ReadLine();
+            } while (response != "" && response.ToLower() != "y" && response.ToLower() != "n");
+
+            var choice = response == "" || response.ToLower() == "y";
+            Config.AppSettings.Settings.Remove(TelemetryKey);
+            Config.AppSettings.Settings.Add(TelemetryKey, choice.ToString());
+            Config.Save(ConfigurationSaveMode.Modified);
+            TelemetryClient.TrackUserChoice(response);
+        }
+
+        private static void SendTelemetry(string eventName, string message)
+        {
+            bool temp;
+            bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out temp);
+            if (temp)
+            {
+                TelemetryClient.Track(eventName, ConnectionString, Name, message);
+            }
         }
     }
 }

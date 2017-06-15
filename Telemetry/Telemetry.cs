@@ -2,70 +2,27 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Net.NetworkInformation;
     using System.Security.Cryptography;
     using System.Text;
-    using System.Xml.Linq;
     using Microsoft.ApplicationInsights;
 
-    public sealed class Telemetry
+    public class Telemetry
     {
-        private static readonly Lazy<Telemetry> Lazy = new Lazy<Telemetry>(() => new Telemetry());
-        public static Telemetry Instance => Lazy.Value;
-        private static readonly string ConfigFilePath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.FullName, ConfigFileName);
-        private static readonly XDocument Doc = XDocument.Load(ConfigFilePath);
-        private const string ConfigFileName = "telemetry.config";
-        private const string TelemetryKey = "telemetry";
-        private const string InstrumentationKey = "instrumentationKey";
-        private const string SimulatedDevice = "simulated device";
-
-        private const string PromptText =
+        private static readonly TelemetryClient Client = new TelemetryClient();
+        public string PromptText =
             "Microsoft would like to collect data about how users use Azure IoT samples and some problems they encounter.\r\n" +
             "Microsoft uses this information to improve our tooling experience.\r\n" +
             "Participation is voluntary and when you choose to participate, your device will automatically sends information to Microsoft about how you use Azure IoT samples";
 
-        private static readonly TelemetryClient Client = new TelemetryClient
+        public Telemetry(string instrumentationKey)
         {
-            InstrumentationKey = ReadConfig(InstrumentationKey)
-        };
-
-        private static string ReadConfig(string key)
-        {
-            return !string.IsNullOrEmpty(ConfigFilePath) ? Doc.Descendants(key).First()?.Value : null;
+            Client.InstrumentationKey = instrumentationKey;
         }
 
-        private static void SetConfig(string key, string value)
-        {
-            if (!string.IsNullOrEmpty(ConfigFilePath))
-            {
-                var element = Doc.Descendants(key).First();
-                if (element != null)
-                {
-                    element.Value = value;
-                    Doc.Save(ConfigFilePath);
-                }
-            }
-        }
-
-        public static void AskForPermission()
-        {
-            if (!string.IsNullOrEmpty(ReadConfig(TelemetryKey)))
-            {
-                return;
-            }
-            string response;
-            Console.WriteLine(PromptText);
-            do
-            {
-                Console.Write("Select y to enable data collection :(y/n, default is y) ");
-                response = Console.ReadLine();
-            } while (response != "" && response.ToLower() != "y" && response.ToLower() != "n");
-            SetConfig(TelemetryKey, (response == "" || response.ToLower() == "y") ? "true" : "false");
-            Instance.TrackUserChoice(response);
-        }
-
+        private const string SimulatedDevice = "simulated device";
+       
         private static string SHA256Hash(string value)
         {
             using (var hash = SHA256.Create())
@@ -83,7 +40,7 @@
                     .FirstOrDefault();
         }
 
-        private void TrackUserChoice(string choice)
+        public void TrackUserChoice(string choice)
         {
             if (string.IsNullOrEmpty(choice))
             {
@@ -99,9 +56,7 @@
 
         public void Track(string eventName, string connectionstring, string projectName, string message)
         {
-            bool telemetrySwitch;
-            bool.TryParse(ReadConfig(TelemetryKey), out telemetrySwitch);
-            if (!telemetrySwitch)
+            if (string.IsNullOrEmpty(Client.InstrumentationKey))
             {
                 return;
             }
