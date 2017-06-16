@@ -7,10 +7,12 @@
     using System.Security.Cryptography;
     using System.Text;
     using Microsoft.ApplicationInsights;
+    using Microsoft.ApplicationInsights.Extensibility;
+    using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
 
     public class Telemetry
     {
-        private static readonly TelemetryClient Client = new TelemetryClient();
+        private static TelemetryClient Client;
         public string PromptText =
             "Microsoft would like to collect data about how users use Azure IoT samples and some problems they encounter.\r\n" +
             "Microsoft uses this information to improve our tooling experience.\r\n" +
@@ -18,7 +20,10 @@
 
         public Telemetry(string instrumentationKey)
         {
-            Client.InstrumentationKey = instrumentationKey;
+            var config = TelemetryConfiguration.CreateDefault();
+            config.InstrumentationKey = instrumentationKey;
+            config.TelemetryChannel = new ServerTelemetryChannel();
+            Client = new TelemetryClient(config);
         }
 
         private const string SimulatedDevice = "simulated device";
@@ -52,14 +57,11 @@
                 {"device", SimulatedDevice},
                 {"userchoice", choice}
             });
+            Client.Flush();
         }
 
         public void Track(string eventName, string connectionstring, string projectName, string message)
         {
-            if (string.IsNullOrEmpty(Client.InstrumentationKey))
-            {
-                return;
-            }
             try
             {
                 Client.TrackEvent(eventName, new Dictionary<string, string>
@@ -72,6 +74,7 @@
                     {"mac", SHA256Hash(GetMac())},
                     {"message", message}
                 });
+                Client.Flush();
             }
             catch (Exception)
             {
