@@ -20,10 +20,18 @@
 
         public Telemetry(string instrumentationKey)
         {
-            var config = TelemetryConfiguration.CreateDefault();
-            config.InstrumentationKey = instrumentationKey;
-            config.TelemetryChannel = new ServerTelemetryChannel();
-            Client = new TelemetryClient(config);
+            try
+            {
+                var config = TelemetryConfiguration.CreateDefault();
+                config.InstrumentationKey = instrumentationKey;
+                config.TelemetryChannel = new ServerTelemetryChannel();
+                Client = new TelemetryClient(config);
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
+
         }
 
         private const string SimulatedDevice = "simulated device";
@@ -47,17 +55,24 @@
 
         public void TrackUserChoice(string choice)
         {
-            if (string.IsNullOrEmpty(choice))
+            try
             {
-                choice = "y";
+                if (string.IsNullOrEmpty(choice))
+                {
+                    choice = "y";
+                }
+                Client.TrackEvent("success", new Dictionary<string, string>
+                {
+                    {"language", "C#"},
+                    {"device", SimulatedDevice},
+                    {"userchoice", choice}
+                });
+                Client.Flush();
             }
-            Client.TrackEvent("success", new Dictionary<string, string>
+            catch (Exception)
             {
-                {"language", "C#"},
-                {"device", SimulatedDevice},
-                {"userchoice", choice}
-            });
-            Client.Flush();
+                //ignore
+            }
         }
 
         public void Track(string eventName, string connectionstring, string projectName, string message)
