@@ -68,14 +68,17 @@
             Config.AppSettings.Settings.Remove(TelemetryKey);
             Config.AppSettings.Settings.Add(TelemetryKey, choice.ToString());
             Config.Save(ConfigurationSaveMode.Modified);
-            TelemetryClient.TrackUserChoice(response);
+            if (TelemetryClient.IsValid)
+            {
+                TelemetryClient.TrackUserChoice(response);
+            }
         }
 
         private static void SendTelemetry(string eventName, string message)
         {
             bool shouldSend;
             bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
-            if (shouldSend)
+            if (shouldSend && TelemetryClient.IsValid)
             {
                 TelemetryClient.Track(eventName, ConnectionString, Name, message);
             }
