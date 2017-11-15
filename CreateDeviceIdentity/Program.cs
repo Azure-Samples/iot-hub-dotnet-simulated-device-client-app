@@ -56,10 +56,10 @@
             {
                 return;
             }
-            string response;
 
             try
             {
+                string response;
                 TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstrumentationKey]);
                 Console.WriteLine(Telemetry.PromptText);
                 do
@@ -82,12 +82,16 @@
 
         private static void SendTelemetry(string eventName, string message)
         {
-            bool shouldSend;
-            bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
-            if (shouldSend)
+            if(TelemetryClient != null)
             {
-                TelemetryClient?.Track(eventName, ConnectionString, Name, message);
+                bool shouldSend;
+                bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
+                if (shouldSend)
+                {
+                    TelemetryClient.Track(eventName, ConnectionString, Name, message);
+                }
             }
+
         }
     }
 }
