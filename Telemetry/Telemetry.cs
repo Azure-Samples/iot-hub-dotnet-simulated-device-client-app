@@ -13,25 +13,17 @@
     public class Telemetry
     {
         private static TelemetryClient Client;
-        public string PromptText =
+        public static string PromptText =
             "Microsoft would like to collect data about how users use Azure IoT samples and some problems they encounter.\r\n" +
             "Microsoft uses this information to improve our tooling experience.\r\n" +
             "Participation is voluntary and when you choose to participate, your device will automatically sends information to Microsoft about how you use Azure IoT samples";
 
         public Telemetry(string instrumentationKey)
         {
-            try
-            {
-                var config = TelemetryConfiguration.CreateDefault();
-                config.InstrumentationKey = instrumentationKey;
-                config.TelemetryChannel = new ServerTelemetryChannel();
-                Client = new TelemetryClient(config);
-            }
-            catch (Exception)
-            {
-                //ignore
-            }
-
+            var config = TelemetryConfiguration.CreateDefault();
+            config.InstrumentationKey = instrumentationKey;
+            config.TelemetryChannel = new ServerTelemetryChannel();
+            Client = new TelemetryClient(config);
         }
 
         private const string SimulatedDevice = "simulated device";
