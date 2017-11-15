@@ -18,12 +18,14 @@
             "Microsoft uses this information to improve our tooling experience.\r\n" +
             "Participation is voluntary and when you choose to participate, your device will automatically sends information to Microsoft about how you use Azure IoT samples";
 
-        public bool IsValid { get; private set; }
+        public bool IsValid
+        {
+            get { return Client != null; }
+        }
 
         public Telemetry(string instrumentationKey)
         {
             Client = Initialization(instrumentationKey);
-            IsValid = Client != null;
         }
 
         private TelemetryClient Initialization(string instrumentationKey)
