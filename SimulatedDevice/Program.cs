@@ -46,6 +46,7 @@
         {
             Console.WriteLine("Simulated device\n");
             _deviceClient = DeviceClient.Create(IotHubUri, new DeviceAuthenticationWithRegistrySymmetricKey(DeviceId, DeviceKey), TransportType.Mqtt);
+            _deviceClient.ProductInfo = "HappyPath_Simulated-CSharp";
 
             SendDeviceToCloudMessagesAsync();
             Console.ReadLine();
