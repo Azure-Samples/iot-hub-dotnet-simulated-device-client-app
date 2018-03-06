@@ -15,7 +15,7 @@
         private const string DeviceId = "myFirstDevice";
         private const string TelemetryKey = "telemetry";
         private const string InstrumentationKey = "instrumentationKey";
-        private static readonly Telemetry TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstrumentationKey]);
+        private static Telemetry TelemetryClient;
         private static readonly Configuration Config = ConfigurationManager.OpenExeConfiguration(System.IO.Path.Combine(
             Environment.CurrentDirectory, System.Reflection.Assembly.GetExecutingAssembly().ManifestModule.Name));
 
@@ -56,29 +56,42 @@
             {
                 return;
             }
-            string response;
-            Console.WriteLine(TelemetryClient.PromptText);
-            do
-            {
-                Console.Write("Select y to enable data collection :(y/n, default is y) ");
-                response = Console.ReadLine();
-            } while (response != "" && response.ToLower() != "y" && response.ToLower() != "n");
 
-            var choice = response == "" || response.ToLower() == "y";
-            Config.AppSettings.Settings.Remove(TelemetryKey);
-            Config.AppSettings.Settings.Add(TelemetryKey, choice.ToString());
-            Config.Save(ConfigurationSaveMode.Modified);
-            TelemetryClient.TrackUserChoice(response);
+            try
+            {
+                string response;
+                TelemetryClient = new Telemetry(ConfigurationManager.AppSettings[InstrumentationKey]);
+                Console.WriteLine(Telemetry.PromptText);
+                do
+                {
+                    Console.Write("Select y to enable data collection :(y/n, default is y) ");
+                    response = Console.ReadLine();
+                } while (response != "" && response.ToLower() != "y" && response.ToLower() != "n");
+
+                var choice = response == "" || response.ToLower() == "y";
+                Config.AppSettings.Settings.Remove(TelemetryKey);
+                Config.AppSettings.Settings.Add(TelemetryKey, choice.ToString());
+                Config.Save(ConfigurationSaveMode.Modified);
+                TelemetryClient.TrackUserChoice(response);
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
         }
 
         private static void SendTelemetry(string eventName, string message)
         {
-            bool shouldSend;
-            bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
-            if (shouldSend)
+            if(TelemetryClient != null)
             {
-                TelemetryClient.Track(eventName, ConnectionString, Name, message);
+                bool shouldSend;
+                bool.TryParse(Config.AppSettings.Settings[TelemetryKey].Value, out shouldSend);
+                if (shouldSend)
+                {
+                    TelemetryClient.Track(eventName, ConnectionString, Name, message);
+                }
             }
+
         }
     }
 }

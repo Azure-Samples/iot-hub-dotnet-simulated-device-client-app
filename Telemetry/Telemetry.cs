@@ -13,10 +13,12 @@
     public class Telemetry
     {
         private static TelemetryClient Client;
-        public string PromptText =
+        public static string PromptText =
             "Microsoft would like to collect data about how users use Azure IoT samples and some problems they encounter.\r\n" +
             "Microsoft uses this information to improve our tooling experience.\r\n" +
-            "Participation is voluntary and when you choose to participate, your device will automatically sends information to Microsoft about how you use Azure IoT samples";
+            "Participation is voluntary and when you choose to participate, your device will automatically sends information to Microsoft about how you use Azure IoT samples\r\n" +
+            "Telemetry setting will be remembered. If you would like to reset, please delete following file and run the sample again\r\n" +
+            "CreateDeviceIdentity.exe.config (which is in the same folder with CreateDeviceIdentity.exe)";
 
         public Telemetry(string instrumentationKey)
         {
@@ -47,17 +49,28 @@
 
         public void TrackUserChoice(string choice)
         {
-            if (string.IsNullOrEmpty(choice))
+            try
             {
-                choice = "y";
+                if (string.IsNullOrEmpty(choice))
+                {
+                    choice = "y";
+                }
+                if(choice == "n")
+                {
+                    Client.Context.Location.Ip = "0.0.0.0";
+                }
+                Client.TrackEvent("success", new Dictionary<string, string>
+                {
+                    {"language", "C#"},
+                    {"device", SimulatedDevice},
+                    {"userchoice", choice}
+                });
+                Client.Flush();
             }
-            Client.TrackEvent("success", new Dictionary<string, string>
+            catch (Exception)
             {
-                {"language", "C#"},
-                {"device", SimulatedDevice},
-                {"userchoice", choice}
-            });
-            Client.Flush();
+                //ignore
+            }
         }
 
         public void Track(string eventName, string connectionstring, string projectName, string message)
